@@ -1,4 +1,5 @@
 .env
 bioeco_graph.jsonld
 api.json
-
+.DS_Store
+api_data
