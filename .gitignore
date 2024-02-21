@@ -4,4 +4,4 @@ api.json
 .DS_Store
 api_data
 __pycache__
-
+.vscode

@@ -3,7 +3,7 @@ from rdflib import Graph, URIRef, Literal, BNode, Namespace
 from rdflib.namespace import RDF
 from pyld import jsonld
 from lib import *
-from lib.api import api_layer
+from lib.api import api_layer, api_eovs
 
 
 def generate_graph(layers:dict, mock=False) -> str:
@@ -11,6 +11,12 @@ def generate_graph(layers:dict, mock=False) -> str:
 
     schema = Namespace("http://schema.org/")
     geosparql = Namespace("http://www.opengis.net/ont/geosparql#")
+
+    # get eov map
+
+    eovs = api_eovs()
+
+    # build graph
 
     g = Graph()
 
@@ -33,9 +39,24 @@ def generate_graph(layers:dict, mock=False) -> str:
         g.add((subject, schema.url, Literal(url)))
         g.add((subject, schema.description, Literal(strip_html_tags(layer_detail["abstract"]))))
 
+        # geometry
+
         geometry = BNode()
         g.add((subject, geosparql.hasGeometry, geometry))
         g.add((geometry, geosparql.asWKT, Literal(layer_detail["csw_wkt_geometry"], datatype=geosparql.wktLiteral)))
+
+        # eovs
+
+        if "tkeywords" in layer_detail:
+            layer_eovs = [eovs[eov] for eov in layer_detail["tkeywords"] if eov in eovs]
+
+            if len(layer_eovs) > 0:
+                for eov in layer_eovs:
+                    vm = BNode()
+                    g.add((vm, RDF.type, schema.PropertyValue))
+                    g.add((vm, schema.name, Literal(eov["label"])))
+                    g.add((vm, schema.propertyID, Literal(eov["about"])))
+                    g.add((subject, schema.variableMeasured, vm))
 
         # test cases:
         # - https://geonode.goosocean.org/layers/geonode_data:geonode:NRW_Benthic_Rock_monitoring
