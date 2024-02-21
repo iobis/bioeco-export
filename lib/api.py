@@ -31,17 +31,16 @@ def api_layer(uri: str, mock: bool=True) -> dict:
         return data
 
 
-def api_thesaurus_keywords() -> dict:
-    """Get thesaurus keywords from the BioEco GeoNode API."""
+def api_thesauri() -> dict:
+    """Get thesaurus keywords from the BioEco GeoNode API grouped by thesaurus."""
 
     data = requests.get(f"{API_URL}/api/thesaurus/keywords/").json()
-    return data["objects"]
+    thesaurus_dict = dict()
 
-
-def api_eovs() -> dict:
-    """Get EOVs from the BioEco GeoNode API."""
-
-    keywords = api_thesaurus_keywords()
-    eovs = [keyword for keyword in keywords if keyword["thesaurus_identifier"] == "eovs-rdf"]
-    eovs_map = {eov["resource_uri"]: eov for eov in eovs}
-    return eovs_map
+    for keyword in data["objects"]:
+        if keyword["thesaurus_identifier"] not in thesaurus_dict:
+            thesaurus_dict[keyword["thesaurus_identifier"]] = dict()
+        if keyword["resource_uri"] not in thesaurus_dict[keyword["thesaurus_identifier"]]:
+            thesaurus_dict[keyword["thesaurus_identifier"]][keyword["resource_uri"]] = keyword
+    
+    return thesaurus_dict

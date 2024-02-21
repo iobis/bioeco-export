@@ -3,7 +3,7 @@ from rdflib import Graph, URIRef, Literal, BNode, Namespace
 from rdflib.namespace import RDF
 from pyld import jsonld
 from lib import *
-from lib.api import api_layer, api_eovs
+from lib.api import api_layer, api_thesauri
 
 
 def generate_graph(layers:dict, mock=False) -> str:
@@ -12,9 +12,9 @@ def generate_graph(layers:dict, mock=False) -> str:
     schema = Namespace("http://schema.org/")
     geosparql = Namespace("http://www.opengis.net/ont/geosparql#")
 
-    # get eov map
+    # get thesauri
 
-    eovs = api_eovs()
+    thesauri = api_thesauri()
 
     # build graph
 
@@ -48,19 +48,38 @@ def generate_graph(layers:dict, mock=False) -> str:
         # eovs
 
         if "tkeywords" in layer_detail:
-            layer_eovs = [eovs[eov] for eov in layer_detail["tkeywords"] if eov in eovs]
+
+            layer_eovs = [thesauri["eovs-rdf"][item] for item in layer_detail["tkeywords"] if item in thesauri["eovs-rdf"]]
+            layer_subvariables = [thesauri["eov-subvariables-rdf"][item] for item in layer_detail["tkeywords"] if item in thesauri["eov-subvariables-rdf"]]
+            layer_othervariables = [thesauri["eovs-other-rdf"][item] for item in layer_detail["tkeywords"] if item in thesauri["eovs-other-rdf"]]
 
             if len(layer_eovs) > 0:
-                for eov in layer_eovs:
+                for variable in layer_eovs:
                     vm = BNode()
                     g.add((vm, RDF.type, schema.PropertyValue))
-                    g.add((vm, schema.name, Literal(eov["label"])))
-                    g.add((vm, schema.propertyID, Literal(eov["about"])))
+                    g.add((vm, schema.name, Literal(variable["label"])))
+                    g.add((vm, schema.propertyID, Literal(variable["about"])))
                     g.add((subject, schema.variableMeasured, vm))
 
-        # test cases:
-        # - https://geonode.goosocean.org/layers/geonode_data:geonode:NRW_Benthic_Rock_monitoring
-        # - https://geonode.goosocean.org/layers/geonode_data:geonode:irish_deepwater_trawl_survey
+            if len(layer_subvariables) > 0:
+                for variable in layer_subvariables:
+                    vm = BNode()
+                    g.add((vm, RDF.type, schema.PropertyValue))
+                    g.add((vm, schema.name, Literal(variable["label"])))
+                    g.add((vm, schema.propertyID, Literal(variable["about"])))
+                    g.add((subject, schema.variableMeasured, vm))
+
+            if len(layer_othervariables) > 0:
+                for variable in layer_othervariables:
+                    vm = BNode()
+                    g.add((vm, RDF.type, schema.PropertyValue))
+                    g.add((vm, schema.name, Literal(variable["label"])))
+                    g.add((vm, schema.propertyID, Literal(variable["about"])))
+                    g.add((subject, schema.variableMeasured, vm))
+
+        # readiness-coordination-rdf
+        # readiness-data-rdf
+        # readiness-requirements-rdf
 
         # "temporal_extent_end": null,
         # "temporal_extent_start": "2019-01-01T00:00:00",
