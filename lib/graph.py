@@ -77,6 +77,7 @@ def generate_graph(layers:dict, mock=False) -> str:
                     g.add((vm, schema.propertyID, Literal(variable["about"])))
                     g.add((subject, schema.variableMeasured, vm))
 
+        # readiness levels
         # readiness-coordination-rdf
         # readiness-data-rdf
         # readiness-requirements-rdf
@@ -91,10 +92,6 @@ def generate_graph(layers:dict, mock=False) -> str:
         #     "Ireland"
         # ],
 
-        # eovs
-        # ebvs
-        # other keywords
-        # readiness levels
         # funding, funding sector
 
     # serialize
