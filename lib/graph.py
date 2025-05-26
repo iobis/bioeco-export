@@ -2,11 +2,12 @@ import json
 from rdflib import Graph, URIRef, Literal, BNode, Namespace
 from rdflib.namespace import RDF
 from pyld import jsonld
-from lib import *
+from lib.geo import fetch_geometry
 from lib.api import api_layer, api_thesauri
+from lib import strip_html_tags
 
 
-def generate_graph(layers:dict, mock=False) -> str:
+def generate_graph(layers: dict, mock=False) -> str:
     """Generate a graph from the BioEco GeoNode API data."""
 
     schema = Namespace("http://schema.org/")
@@ -23,7 +24,7 @@ def generate_graph(layers:dict, mock=False) -> str:
     for layer in layers:
 
         # get later detail from API
-        
+
         layer_detail = api_layer(layer["resource_uri"], mock=mock)
 
         # create url
@@ -33,17 +34,27 @@ def generate_graph(layers:dict, mock=False) -> str:
         # add triples
 
         subject = URIRef(url)
-        
+
         g.add((subject, RDF.type, schema.ResearchProject))
         g.add((subject, schema.name, Literal(layer_detail["title"])))
         g.add((subject, schema.url, Literal(url)))
         g.add((subject, schema.description, Literal(strip_html_tags(layer_detail["abstract"]))))
 
-        # geometry
+        # geometry (legacy, bounding box)
 
-        geometry = BNode()
-        g.add((subject, geosparql.hasGeometry, geometry))
-        g.add((geometry, geosparql.asWKT, Literal(layer_detail["csw_wkt_geometry"], datatype=geosparql.wktLiteral)))
+        # geometry = BNode()
+        # g.add((subject, geosparql.hasGeometry, geometry))
+        # g.add((geometry, geosparql.asWKT, Literal(layer_detail["csw_wkt_geometry"], datatype=geosparql.wktLiteral)))
+
+        # geometry (shape)
+
+        typename = layer_detail["typename"]
+        if typename is not None:
+            geometry = fetch_geometry(typename)
+            if geometry is not None:
+                geometry_node = BNode()
+                g.add((subject, geosparql.hasGeometry, geometry_node))
+                g.add((geometry_node, geosparql.asWKT, Literal(geometry, datatype=geosparql.wktLiteral)))
 
         # eovs
 
