@@ -4,5 +4,5 @@ Exports the GOOS BioEco graph as JSON-LD to <https://bioeco-graph.s3.amazonaws.c
 
 ## How to
 
-- Run `populate_cache.py` to populate the disk based API cache
-- Run the other scripts with `mock=True` to use the disk cache
+- Run `populate_cache.py` to populate the disk based API response cache
+- Run the other scripts with `mock=True` to use the API response cache and generate the export

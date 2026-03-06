@@ -12,10 +12,10 @@ def api_layers(mock: bool=True) -> dict:
     if mock:
         with open("api_data/layers.json") as f:
             data = json.load(f)
-            return data["objects"]
+            return data
     else:
         data = requests.get(f"{API_URL}/api/layers/").json()
-        return data["objects"]
+        return data
 
 
 def api_layer(uri: str, mock: bool=True) -> dict:
@@ -31,10 +31,15 @@ def api_layer(uri: str, mock: bool=True) -> dict:
         return data
 
 
-def api_thesauri() -> dict:
+def api_thesauri(mock: bool=True) -> dict:
     """Get thesaurus keywords from the BioEco GeoNode API grouped by thesaurus."""
 
-    data = requests.get(f"{API_URL}/api/thesaurus/keywords/").json()
+    if mock:
+        with open(f"api_data/keywords.json") as f:
+            data = json.load(f)
+    else:
+        data = requests.get(f"{API_URL}/api/thesaurus/keywords/").json()
+
     thesaurus_dict = dict()
 
     for keyword in data["objects"]:

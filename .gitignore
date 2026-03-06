@@ -3,5 +3,6 @@ bioeco_graph.jsonld
 api.json
 .DS_Store
 api_data*
+geo_data
 __pycache__
 .vscode

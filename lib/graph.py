@@ -2,9 +2,10 @@ import json
 from rdflib import Graph, URIRef, Literal, BNode, Namespace
 from rdflib.namespace import RDF
 from pyld import jsonld
-from lib.geo import fetch_geometry
+from lib.geo import get_wkt
 from lib.api import api_layer, api_thesauri
 from lib import strip_html_tags
+import re
 
 
 def generate_graph(layers: dict, mock=False) -> str:
@@ -15,7 +16,7 @@ def generate_graph(layers: dict, mock=False) -> str:
 
     # get thesauri
 
-    thesauri = api_thesauri()
+    thesauri = api_thesauri(mock=mock)
 
     # build graph
 
@@ -41,7 +42,6 @@ def generate_graph(layers: dict, mock=False) -> str:
         g.add((subject, schema.description, Literal(strip_html_tags(layer_detail["abstract"]))))
 
         # geometry (legacy, bounding box)
-
         # geometry = BNode()
         # g.add((subject, geosparql.hasGeometry, geometry))
         # g.add((geometry, geosparql.asWKT, Literal(layer_detail["csw_wkt_geometry"], datatype=geosparql.wktLiteral)))
@@ -50,7 +50,8 @@ def generate_graph(layers: dict, mock=False) -> str:
 
         typename = layer_detail["typename"]
         if typename is not None:
-            geometry = fetch_geometry(typename)
+            layer_id = re.search(r"\d+", layer["resource_uri"]).group(0)
+            geometry = get_wkt(typename, layer_id, mock=mock)
             if geometry is not None:
                 geometry_node = BNode()
                 g.add((subject, geosparql.hasGeometry, geometry_node))
@@ -88,13 +89,25 @@ def generate_graph(layers: dict, mock=False) -> str:
                     g.add((vm, schema.propertyID, Literal(variable["about"])))
                     g.add((subject, schema.variableMeasured, vm))
 
+        # temporal extent
+
+        temporal_start = layer_detail.get("temporal_extent_start")
+        temporal_end = layer_detail.get("temporal_extent_end")
+
+        if temporal_start or temporal_end:
+            if temporal_start and temporal_end:
+                temporal_value = f"{temporal_start}/{temporal_end}"
+            else:
+                temporal_value = temporal_start or temporal_end
+
+            g.add((subject, schema.temporalCoverage, Literal(temporal_value)))
+
+
+
         # readiness levels
         # readiness-coordination-rdf
         # readiness-data-rdf
         # readiness-requirements-rdf
-
-        # "temporal_extent_end": null,
-        # "temporal_extent_start": "2019-01-01T00:00:00",
 
         # "maintenance_frequency": "annually",
 

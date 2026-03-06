@@ -9,7 +9,7 @@ def populate_cache():
     with open(f"api_data/layers.json", "w") as f:
         f.write(json.dumps(layers, indent=2))
 
-    for layer in layers:
+    for layer in layers["objects"]:
         layer_data = api_layer(layer["resource_uri"], mock=False)
         layer_id = re.search(r"\d+", layer["resource_uri"]).group(0)
         print(layer_id)
