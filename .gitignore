@@ -2,7 +2,14 @@
 bioeco_graph.jsonld
 api.json
 .DS_Store
-api_data*
+
+# API and geo data
+api_data/*
+!api_data/keywords.json
+!api_data/thesaurus_keywords.json
+api_data_2024
+api_data_2025
 geo_data
+
 __pycache__
 .vscode

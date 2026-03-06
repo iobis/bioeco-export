@@ -31,11 +31,23 @@ def api_layer(uri: str, mock: bool=True) -> dict:
         return data
 
 
+def api_keywords(mock: bool=True) -> dict:
+    """Get raw thesaurus keywords from the BioEco GeoNode API."""
+
+    if mock:
+        with open("api_data/keywords.json") as f:
+            data = json.load(f)
+            return data
+    else:
+        data = requests.get(f"{API_URL}/api/keywords/").json()
+        return data
+
+
 def api_thesauri(mock: bool=True) -> dict:
     """Get thesaurus keywords from the BioEco GeoNode API grouped by thesaurus."""
 
     if mock:
-        with open(f"api_data/keywords.json") as f:
+        with open(f"api_data/thesaurus_keywords.json") as f:
             data = json.load(f)
     else:
         data = requests.get(f"{API_URL}/api/thesaurus/keywords/").json()

@@ -3,7 +3,7 @@ from rdflib import Graph, URIRef, Literal, BNode, Namespace
 from rdflib.namespace import RDF
 from pyld import jsonld
 from lib.geo import get_wkt
-from lib.api import api_layer, api_thesauri
+from lib.api import api_layer, api_thesauri, api_keywords
 from lib import strip_html_tags
 import re
 import ast
@@ -18,6 +18,18 @@ def generate_graph(layers: dict, mock=False) -> str:
     # get thesauri
 
     thesauri = api_thesauri(mock=mock)
+
+    # get generic keywords and build lookup by resource_uri
+    keywords_data = api_keywords(mock=mock)
+    keyword_lookup = {
+        obj["resource_uri"]: obj.get("name")
+        for obj in keywords_data.get("objects", [])
+    }
+
+    # collect all thesaurus keyword URIs to optionally exclude from generic keywords
+    thesaurus_keyword_uris = set()
+    for thesaurus in thesauri.values():
+        thesaurus_keyword_uris.update(thesaurus.keys())
 
     # build graph
 
@@ -90,6 +102,21 @@ def generate_graph(layers: dict, mock=False) -> str:
                     g.add((vm, schema.propertyID, Literal(variable["about"])))
                     g.add((subject, schema.variableMeasured, vm))
 
+        # generic keywords (not mapped to EOV thesauri)
+
+        if "keywords" in layer_detail and isinstance(layer_detail["keywords"], list):
+            for keyword_uri in layer_detail["keywords"]:
+                # skip if this keyword URI is already represented in thesauri
+                if keyword_uri in thesaurus_keyword_uris:
+                    continue
+
+                label = keyword_lookup.get(keyword_uri)
+                if label:
+                    g.add((subject, schema.keywords, Literal(label)))
+                else:
+                    # fallback to the URI if we don't have a label
+                    g.add((subject, schema.keywords, Literal(keyword_uri)))
+
         # temporal extent
 
         temporal_start = layer_detail.get("temporal_extent_start")
@@ -103,13 +130,6 @@ def generate_graph(layers: dict, mock=False) -> str:
 
             g.add((subject, schema.temporalCoverage, Literal(temporal_value)))
 
-
-
-        # readiness levels
-        # readiness-coordination-rdf
-        # readiness-data-rdf
-        # readiness-requirements-rdf
-
         # maintenance frequency
 
         maintenance_frequency = layer_detail.get("maintenance_frequency")
@@ -119,11 +139,6 @@ def generate_graph(layers: dict, mock=False) -> str:
             g.add((mf_prop, schema.name, Literal("maintenanceFrequency")))
             g.add((mf_prop, schema.value, Literal(maintenance_frequency)))
             g.add((subject, schema.additionalProperty, mf_prop))
-
-        # "regions":
-        # [
-        #     "Ireland"
-        # ],
 
         # funding, funding sector
 
@@ -155,6 +170,18 @@ def generate_graph(layers: dict, mock=False) -> str:
                 g.add((grant, schema.category, Literal(sector)))
 
             g.add((subject, schema.funding, grant))
+
+        # "regions":
+        # [
+        #     "Ireland"
+        # ],
+
+        # keywords
+
+        # readiness levels
+        # readiness-coordination-rdf
+        # readiness-data-rdf
+        # readiness-requirements-rdf
 
     # serialize
 
