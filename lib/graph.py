@@ -171,17 +171,35 @@ def generate_graph(layers: dict, mock=False) -> str:
 
             g.add((subject, schema.funding, grant))
 
-        # "regions":
-        # [
-        #     "Ireland"
-        # ],
-
-        # keywords
-
         # readiness levels
-        # readiness-coordination-rdf
-        # readiness-data-rdf
-        # readiness-requirements-rdf
+
+        if "tkeywords" in layer_detail:
+            readiness_thesauri = {
+                "readiness-coordination-rdf": "readinessCoordination",
+                "readiness-data-rdf": "readinessData",
+                "readiness-requirements-rdf": "readinessRequirements",
+            }
+
+            for thesaurus_id, readiness_name in readiness_thesauri.items():
+                if thesaurus_id not in thesauri:
+                    continue
+
+                readiness_dict = thesauri[thesaurus_id]
+
+                for keyword_uri in layer_detail["tkeywords"]:
+                    if keyword_uri not in readiness_dict:
+                        continue
+
+                    readiness_keyword = readiness_dict[keyword_uri]
+                    label = readiness_keyword.get("label") or readiness_keyword.get("alt_label")
+                    if not label:
+                        continue
+
+                    readiness_node = BNode()
+                    g.add((readiness_node, RDF.type, schema.PropertyValue))
+                    g.add((readiness_node, schema.name, Literal(readiness_name)))
+                    g.add((readiness_node, schema.value, Literal(label)))
+                    g.add((subject, schema.additionalProperty, readiness_node))
 
     # serialize
 
