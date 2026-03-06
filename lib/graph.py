@@ -171,6 +171,22 @@ def generate_graph(layers: dict, mock=False) -> str:
 
             g.add((subject, schema.funding, grant))
 
+        # project outputs (hasPart as DataDownload)
+
+        outputs_raw = layer_detail.get("outputs")
+        if outputs_raw:
+            try:
+                outputs_list = ast.literal_eval(outputs_raw)
+                if isinstance(outputs_list, list):
+                    for output_url in outputs_list:
+                        dd = BNode()
+                        g.add((dd, RDF.type, schema.DataDownload))
+                        g.add((dd, schema.contentUrl, Literal(output_url)))
+                        g.add((subject, schema.hasPart, dd))
+            except (ValueError, SyntaxError):
+                # if parsing fails, skip outputs
+                pass
+
         # readiness levels
 
         if "tkeywords" in layer_detail:
