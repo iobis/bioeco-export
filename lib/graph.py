@@ -37,21 +37,25 @@ def generate_graph(layers: dict, mock=False) -> str:
 
     for layer in layers:
 
-        # get later detail from API
+        # get layer detail from API
 
         layer_detail = api_layer(layer["resource_uri"], mock=mock)
 
-        # create url
-
-        url = f"https://geonode.goosocean.org/layers/geonode_data:{layer_detail['typename']}"
+        # use GeoNode layer page as @id
+        geonode_url = f"{layer['site_url'].rstrip('/')}{layer['detail_url']}"
 
         # add triples
 
-        subject = URIRef(url)
+        subject = URIRef(geonode_url)
 
         g.add((subject, RDF.type, schema.ResearchProject))
         g.add((subject, schema.name, Literal(layer_detail["title"])))
-        g.add((subject, schema.url, Literal(url)))
+
+        # project website (if available in layer detail)
+        project_url = layer_detail.get("url")
+        if project_url:
+            g.add((subject, schema.url, Literal(project_url)))
+
         g.add((subject, schema.description, Literal(strip_html_tags(layer_detail["abstract"]))))
 
         # geometry (legacy, bounding box)
