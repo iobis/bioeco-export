@@ -187,6 +187,19 @@ def generate_graph(layers: dict, mock=False) -> str:
                 # if parsing fails, skip outputs
                 pass
 
+        # standard operating procedures
+
+        sops_raw = layer_detail.get("sops")
+        if sops_raw:
+            try:
+                sops_list = ast.literal_eval(sops_raw)
+                if isinstance(sops_list, list):
+                    for sop_url in sops_list:
+                        g.add((subject, schema.publishingPrinciples, Literal(sop_url)))
+            except (ValueError, SyntaxError):
+                # if parsing fails, skip sops
+                pass
+
         # readiness levels
 
         if "tkeywords" in layer_detail:
