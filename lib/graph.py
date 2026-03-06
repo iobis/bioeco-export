@@ -6,6 +6,7 @@ from lib.geo import get_wkt
 from lib.api import api_layer, api_thesauri
 from lib import strip_html_tags
 import re
+import ast
 
 
 def generate_graph(layers: dict, mock=False) -> str:
@@ -117,6 +118,47 @@ def generate_graph(layers: dict, mock=False) -> str:
         # ],
 
         # funding, funding sector
+        # Funding is provided like this:
+        # "funding": "Funding came from a variety of National Science Foundation grants and from the US Navy and the North Pacific Research Board.",
+        # "funding_sector": "['academia', 'governmental']",
+        # Export to jsonld like this:
+        # "schema:funding": [{
+        #     "@type": "schema:MonetaryGrant",
+        #     "schema:description": "Funding came from a variety of National Science Foundation grants and from the US Navy and the North Pacific Research Board.",
+        #     "schema:category": [
+        #     "academia",
+        #     "governmental"
+        #     ]
+        # }]
+
+        funding_text = layer_detail.get("funding")
+        funding_sector_raw = layer_detail.get("funding_sector")
+
+        if funding_text or funding_sector_raw:
+            grant = BNode()
+            g.add((grant, RDF.type, schema.MonetaryGrant))
+
+            if funding_text:
+                g.add((grant, schema.description, Literal(funding_text)))
+
+            sectors = []
+
+            if isinstance(funding_sector_raw, list):
+                sectors = funding_sector_raw
+            elif isinstance(funding_sector_raw, str):
+                try:
+                    parsed = ast.literal_eval(funding_sector_raw)
+                    if isinstance(parsed, list):
+                        sectors = parsed
+                    else:
+                        sectors = [funding_sector_raw]
+                except (ValueError, SyntaxError):
+                    sectors = [funding_sector_raw]
+
+            for sector in sectors:
+                g.add((grant, schema.category, Literal(sector)))
+
+            g.add((subject, schema.funding, grant))
 
     # serialize
 
