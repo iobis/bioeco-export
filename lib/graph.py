@@ -110,7 +110,15 @@ def generate_graph(layers: dict, mock=False) -> str:
         # readiness-data-rdf
         # readiness-requirements-rdf
 
-        # "maintenance_frequency": "annually",
+        # maintenance frequency
+
+        maintenance_frequency = layer_detail.get("maintenance_frequency")
+        if maintenance_frequency:
+            mf_prop = BNode()
+            g.add((mf_prop, RDF.type, schema.PropertyValue))
+            g.add((mf_prop, schema.name, Literal("maintenanceFrequency")))
+            g.add((mf_prop, schema.value, Literal(maintenance_frequency)))
+            g.add((subject, schema.additionalProperty, mf_prop))
 
         # "regions":
         # [
@@ -118,18 +126,6 @@ def generate_graph(layers: dict, mock=False) -> str:
         # ],
 
         # funding, funding sector
-        # Funding is provided like this:
-        # "funding": "Funding came from a variety of National Science Foundation grants and from the US Navy and the North Pacific Research Board.",
-        # "funding_sector": "['academia', 'governmental']",
-        # Export to jsonld like this:
-        # "schema:funding": [{
-        #     "@type": "schema:MonetaryGrant",
-        #     "schema:description": "Funding came from a variety of National Science Foundation grants and from the US Navy and the North Pacific Research Board.",
-        #     "schema:category": [
-        #     "academia",
-        #     "governmental"
-        #     ]
-        # }]
 
         funding_text = layer_detail.get("funding")
         funding_sector_raw = layer_detail.get("funding_sector")
