@@ -3,7 +3,7 @@ from rdflib import Graph, URIRef, Literal, BNode, Namespace
 from rdflib.namespace import RDF
 from pyld import jsonld
 from lib.geo import get_wkt
-from lib.api import api_layer, api_thesauri, api_keywords
+from lib.api import api_layer, api_thesauri, api_keywords, api_profiles
 from lib import strip_html_tags
 import re
 import ast
@@ -24,6 +24,14 @@ def generate_graph(layers: dict, mock=False) -> str:
     keyword_lookup = {
         obj["resource_uri"]: obj.get("name")
         for obj in keywords_data.get("objects", [])
+    }
+
+    # get user profiles and build lookup by username
+    profiles_data = api_profiles(mock=mock)
+    profile_lookup = {
+        obj.get("username"): obj
+        for obj in profiles_data.get("objects", [])
+        if obj.get("username")
     }
 
     # collect all thesaurus keyword URIs to optionally exclude from generic keywords
@@ -57,6 +65,42 @@ def generate_graph(layers: dict, mock=False) -> str:
             g.add((subject, schema.url, Literal(project_url)))
 
         g.add((subject, schema.description, Literal(strip_html_tags(layer_detail["abstract"]))))
+
+        # contact point from owner / profiles
+
+        owner_username = None
+
+        owner_detail = layer_detail.get("owner")
+        if isinstance(owner_detail, dict):
+            owner_username = owner_detail.get("username")
+
+        if not owner_username:
+            owner_username = layer.get("owner__username")
+
+        profile = profile_lookup.get(owner_username) if owner_username else None
+
+        if profile:
+            first_name = (profile.get("first_name") or "").strip()
+            last_name = (profile.get("last_name") or "").strip()
+            full_name_parts = [part for part in [first_name, last_name] if part]
+            full_name = " ".join(full_name_parts) if full_name_parts else None
+
+            email = None
+            if owner_username and "@" in owner_username:
+                email = owner_username
+
+            if full_name or email:
+                cp = BNode()
+                g.add((cp, RDF.type, schema.ContactPoint))
+                g.add((cp, schema.contactType, Literal("General Inquiries")))
+
+                if full_name:
+                    g.add((cp, schema.name, Literal(full_name)))
+
+                if email:
+                    g.add((cp, schema.email, Literal(email)))
+
+                g.add((subject, schema.contactPoint, cp))
 
         # geometry (legacy, bounding box)
         # geometry = BNode()

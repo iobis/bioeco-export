@@ -43,6 +43,18 @@ def api_keywords(mock: bool=True) -> dict:
         return data
 
 
+def api_profiles(mock: bool=True) -> dict:
+    """Get user profiles from the BioEco GeoNode instance."""
+
+    if mock:
+        with open("api_data/profiles.json") as f:
+            data = json.load(f)
+            return data
+    else:
+        data = requests.get("https://geonode.bioeco.goosocean.org/api/profiles/").json()
+        return data
+
+
 def api_thesauri(mock: bool=True) -> dict:
     """Get thesaurus keywords from the BioEco GeoNode API grouped by thesaurus."""
 
