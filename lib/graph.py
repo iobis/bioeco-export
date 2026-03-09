@@ -134,6 +134,13 @@ def generate_graph(layers: dict, mock=False) -> str:
                     g.add((vm, schema.propertyID, Literal(variable["about"])))
                     g.add((subject, schema.variableMeasured, vm))
 
+                    # also add EOVs to keywords as DefinedTerm
+                    dt = BNode()
+                    g.add((dt, RDF.type, schema.DefinedTerm))
+                    g.add((dt, schema.name, Literal(variable["label"])))
+                    g.add((dt, schema.url, Literal(variable["about"])))
+                    g.add((subject, schema.keywords, dt))
+
             if len(layer_subvariables) > 0:
                 for variable in layer_subvariables:
                     vm = BNode()
@@ -142,6 +149,13 @@ def generate_graph(layers: dict, mock=False) -> str:
                     g.add((vm, schema.propertyID, Literal(variable["about"])))
                     g.add((subject, schema.variableMeasured, vm))
 
+                    # also add EOV subvariables to keywords as DefinedTerm
+                    dt = BNode()
+                    g.add((dt, RDF.type, schema.DefinedTerm))
+                    g.add((dt, schema.name, Literal(variable["label"])))
+                    g.add((dt, schema.url, Literal(variable["about"])))
+                    g.add((subject, schema.keywords, dt))
+
             if len(layer_othervariables) > 0:
                 for variable in layer_othervariables:
                     vm = BNode()
@@ -149,6 +163,13 @@ def generate_graph(layers: dict, mock=False) -> str:
                     g.add((vm, schema.name, Literal(variable["label"])))
                     g.add((vm, schema.propertyID, Literal(variable["about"])))
                     g.add((subject, schema.variableMeasured, vm))
+
+                    # also add other EOV-related variables to keywords as DefinedTerm
+                    dt = BNode()
+                    g.add((dt, RDF.type, schema.DefinedTerm))
+                    g.add((dt, schema.name, Literal(variable["label"])))
+                    g.add((dt, schema.url, Literal(variable["about"])))
+                    g.add((subject, schema.keywords, dt))
 
         # generic keywords (not mapped to EOV thesauri)
 
